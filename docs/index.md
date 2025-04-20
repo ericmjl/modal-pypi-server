@@ -1,30 +1,49 @@
-# modal-pypi-server }}
+# Modal PyPI Server
 
-Welcome to the repository for the modal-pypi-server }} project!
+Welcome to the documentation for the Modal PyPI Server! This project allows you to quickly deploy a private PyPI server using Modal's serverless infrastructure.
 
 ## Quickstart
 
-<!-- uncomment if relevant
-### Install from PyPI
-
-```python
-pip install modal-pypi-server
-```
--->
-### Install from source
+### Deploy your PyPI server
 
 ```bash
-pip install git@github.com:ericmjl/modal-pypi-server
+modal deploy deployments/pypi_deploy.py
 ```
 
-### Build and preview docs
+### Register a user
+
+You can register users using the FastAPI endpoint provided. You'll need to have your admin authentication token ready.
 
 ```bash
-mkdocs serve
+curl -X POST "https://yourusername--pypiserver-register-user.modal.run" \
+  -H "Authorization: Bearer your-admin-token" \
+  -d '{"username": "newuser", "password": "securepassword"}'
 ```
+
+### Configure pip to use your PyPI server
+
+Add the following to your `~/.pip/pip.conf` file:
+
+```ini
+[global]
+index-url = https://your-modal-url.modal.run/simple
+# Replace 'yourusername' with your actual Modal username
+# This should be the URL of your Modal endpoint + '/simple'
+extra-index-url = https://pypi.org/simple
+```
+
+## Documentation
+
+For a deeper understanding of how this PyPI server works:
+
+- [Detailed explanation of the deployment script](pypi_deploy_explanation.md)
+- [API reference](api.md)
 
 ## Why this project exists
 
-Place your reasons here for why this project exists.
+This project exists to provide a simple, serverless solution for hosting private Python packages. It leverages Modal's infrastructure to:
 
-What benefits does this project give to users?
+- Avoid the need to manage your own server
+- Provide persistent storage for packages and user credentials
+- Offer a quick way to set up a private PyPI server
+- Enable secure package distribution within teams and organizations

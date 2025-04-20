@@ -15,6 +15,11 @@ theme:
 
 # We customize the navigation by hand to control the order
 # in which pages show up.
+nav:
+  - Home: index.md
+  - Explanations:
+      - PyPI Server Deployment: pypi_deploy_explanation.md
+  - API Reference: api.md
 
 plugins:
   - search
