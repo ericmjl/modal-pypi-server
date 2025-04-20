@@ -43,6 +43,8 @@ This section:
   - `pypiserver-data`: Stores the actual Python packages
   - `pypiserver-credentials`: Stores the `.htpasswd` file containing user credentials
 
+When Modal creates these volumes (if they don't exist), they persist across deployments. This means your packages and user credentials are preserved even when you update the application code.
+
 ### 3. PyPI Server Function
 
 ```python
@@ -72,6 +74,8 @@ This function:
 - Points to the package storage at `/data/packages`
 - Uses HTTP Basic Authentication with credentials from `/credentials/.htpasswd`
 
+Modal handles all the infrastructure needed to expose this as a public web service, so there's no need to manage servers, URLs, or domain names.
+
 ### 4. User Registration Endpoint
 
 ```python
@@ -97,6 +101,70 @@ This FastAPI endpoint provides an API for registering new users. It:
 - Creates or updates the `.htpasswd` file with the new user credentials
 - Provides a simple way for administrators to add users without direct access to the server
 
+The admin token is stored as a Modal secret, ensuring it's not hardcoded in your source code.
+
+## Continuous Deployment with GitHub Actions
+
+To ensure the PyPI server is always up-to-date with the latest code changes, this project includes a GitHub Actions workflow for continuous deployment. The workflow is defined in `.github/workflows/deploy-modal.yaml`:
+
+```yaml
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Deploy
+        run: |
+          uvx modal deploy deployments/pypi_deploy.py
+```
+
+### How the CI/CD Pipeline Works
+
+1. **Trigger**: The workflow is triggered automatically whenever code is pushed to the `main` branch.
+
+2. **Environment Setup**:
+   - The workflow runs on an Ubuntu latest runner.
+   - It uses GitHub Secrets to securely store and access Modal authentication tokens.
+   - The `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` are essential for authenticating with Modal's API.
+
+3. **Code Checkout**:
+   - The workflow checks out the latest version of the repository code.
+
+4. **Tool Installation**:
+   - It installs the latest version of [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver.
+   - Caching is enabled to speed up subsequent workflow runs.
+
+5. **Deployment**:
+   - The workflow uses `uvx modal deploy` to deploy the PyPI server application to Modal.
+   - The `deployments/pypi_deploy.py` script is the entry point for deployment.
+
+### Benefits of Continuous Deployment
+
+- **Automation**: Code changes are automatically deployed without manual intervention.
+- **Consistency**: Every deployment uses the same process, reducing human error.
+- **Auditability**: Deployment history is tracked in GitHub Actions logs.
+- **Security**: Sensitive credentials are stored as GitHub Secrets, not in the code.
+
 ## Security Considerations
 
 The deployment includes these security measures:
@@ -105,6 +173,38 @@ The deployment includes these security measures:
 2. **Admin Token Authentication**: A separate token is required to register new users
 3. **Persistent Volumes**: Credentials and packages are stored in persistent Modal volumes
 4. **Limited Permissions**: The PyPI server is configured to allow only specific operations
+5. **Secret Management**: Sensitive credentials are stored in Modal secrets and GitHub Secrets
+
+## Architecture Diagram
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                     GitHub Repository                       │
+│                                                            │
+│  ┌─────────────┐    ┌────────────────┐                     │
+│  │ Source Code │───>│ GitHub Actions │                     │
+│  └─────────────┘    └────────┬───────┘                     │
+└───────────────────────────────│──────────────────────────┘
+                                │
+                                ▼
+┌───────────────────────────────────────────────────────────┐
+│                      Modal Platform                        │
+│                                                           │
+│  ┌─────────────────┐       ┌──────────────────┐          │
+│  │   PyPI Server   │◄──────│  CI/CD Pipeline  │          │
+│  │    Function     │       └──────────────────┘          │
+│  └────────┬────────┘                                     │
+│           │                                              │
+│  ┌────────▼────────┐    ┌─────────────────────┐         │
+│  │ User Register   │    │     Modal Secrets   │         │
+│  │    Endpoint     │◄───│  (AUTH_TOKEN, etc.) │         │
+│  └────────┬────────┘    └─────────────────────┘         │
+│           │                                              │
+│  ┌────────▼────────┐    ┌─────────────────────┐         │
+│  │ Package Volume  │    │ Credentials Volume  │         │
+│  └─────────────────┘    └─────────────────────┘         │
+└───────────────────────────────────────────────────────────┘
+```
 
 ## When to Use This
 
@@ -113,5 +213,6 @@ This deployment is suitable for:
 - Teams or organizations that need to host private Python packages
 - Situations where you need quick setup of a private PyPI server
 - Environments where serverless deployment is preferred over managing infrastructure
+- Projects that benefit from continuous deployment of infrastructure changes
 
 For high-security or high-volume production environments, consider additional security measures like HTTPS and more robust authentication mechanisms.

@@ -36,7 +36,7 @@ extra-index-url = https://pypi.org/simple
 
 For a deeper understanding of how this PyPI server works:
 
-- [Detailed explanation of the deployment script](pypi_deploy_explanation.md)
+- [Detailed explanation of the deployment script and CI/CD pipeline](pypi_deploy_explanation.md)
 - [API reference](api.md)
 
 ## Why this project exists
