@@ -30,7 +30,7 @@ def server():
     import subprocess
 
     subprocess.Popen(
-        "pypi-server run -a 'download, list, update' -p 8080 /data/packages -P /credentials/.htpasswd",  # noqa: E501
+        "pypi-server run -a 'update' -p 8080 /data/packages -P /credentials/.htpasswd",  # noqa: E501
         shell=True,
     )
 
