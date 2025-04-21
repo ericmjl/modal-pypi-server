@@ -19,7 +19,6 @@ nav:
   - Home: index.md
   - Explanations:
       - PyPI Server & CI/CD Deployment: pypi_deploy_explanation.md
-  - API Reference: api.md
 
 plugins:
   - search
