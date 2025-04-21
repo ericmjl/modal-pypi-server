@@ -11,5 +11,16 @@ To get started:
 ```bash
 git clone git@github.com:ericmjl/modal-pypi-server
 cd modal-pypi-server
-pixi install
+```
+
+To deploy the app:
+
+```bash
+modal deploy deployments/pypi_deploy.py
+```
+
+And to test locally first:
+
+```bash
+modal serve deployments/pypi_deploy.py
 ```
